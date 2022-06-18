@@ -1,6 +1,7 @@
 #coding: UTF-8
 
 #from pickle import TRUE
+import os
 from gimpfu import *
 
 # page
@@ -11,6 +12,7 @@ PAGE_HEIGHT = 1024
 IMG_MAX_SIZE = 650
 IMG_CENTRE_X = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
 IMG_CENTRE_Y = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
+IMG_LAYER_NAME ="Immagine"
 
 # tape
 TAPE_LEFT_LAYER_NAME = "Tape_Left"
@@ -28,21 +30,42 @@ PAGE_LAYER_NAME = "Pagina"
 PAGE_TEXT_COLOR = "#1e1312"
 PAGE_TEXT_FONT = "Serif Bold"
 
-
-def crea_pagine_da_folder(image, drawable, image_path, author):
+def crea_pagine_da_folder(image, drawable, image_folder_path, destination_folder_path, author, starting_page):
+    page_number = starting_page
     # per ogni immagine nel folder
-    
-    # crea pagina
-    crea_pagina_libro(image, drawable, image_path, author, 100)
-    # esporta come png
-    # cancella immagine
+    for filename in os.listdir(image_folder_path):
+        try:
+            if filename.lower().split(".")[-1] in ("png", "jpg"):
+                image_path = os.path.join(image_folder_path, filename)
+                # crea pagina
+                crea_pagina_libro(image, drawable, image_path, destination_folder_path, author, page_number)
+                # esporta come png
+                png_name = str(page_number) +".png"
+                destination_path = os.path.join(destination_folder_path, png_name)
+                #pdb.file_png_save_defaults(image, drawable, destination_path, destination_path)
+
+                new_image = pdb.gimp_image_duplicate(image)
+                layer = pdb.gimp_image_merge_visible_layers(new_image, CLIP_TO_IMAGE)
+                pdb.file_png_save_defaults(new_image, layer, destination_path, destination_path)
+                #pdb.gimp_file_save(new_image, layer, destination_path, '?')
+                pdb.gimp_image_delete(new_image)
+                # cancella immagine
+                image.remove_layer(pdb.gimp_image_get_layer_by_name(image, IMG_LAYER_NAME))
+                #aumenta pagina
+                page_number+=1
+        except Exception as error:
+            pdb.gimp_message(error)
+
+    pdb.gimp_message("Operazione completata!")
 
 
-def crea_pagina_libro(image, drawable, image_path, author, page_number):
+
+def crea_pagina_libro(image, drawable, image_path, destination_folder_path, author, page_number):
 
     # crea, scala e posiziona immagine
     image_layer = pdb.gimp_file_load_layer(image, image_path)
     pdb.gimp_image_insert_layer(image, image_layer, None, 2)
+    pdb.gimp_layer_set_name(image_layer, IMG_LAYER_NAME)
     
     ridimensiona_layer(image_layer, IMG_MAX_SIZE)
     centra_layer(image_layer)
@@ -115,16 +138,26 @@ register(
     "<Image>/ScriptPerIvana/CreaPaginaLibro",  # Labels used for plugins in menus
     "RGB*, GRAY*",  # The type of image to be processed by the plugin
     [
-        # (PF_STRING, "image_folder_path",
-        #             "Path del folder di origine delle immagini PNG",
-        #              ""),
-        (PF_STRING, "image_path",
-                    "Path immagine dipinto",
-                     ""),
+        (PF_STRING, "image_folder_path",
+                    "Path del folder di origine delle immagini PNG o JPG",
+                    ""),
+        (PF_STRING, "destination_folder_path",
+                    """
+                    
+Path di destinazione delle pagine del libro
 
+****
+IMPORTANTE: file gia presenti potrebbero
+venire sovrascritti!!!
+****
+""",
+                    ""),
         (PF_STRING, "author",
                     "Nome autore dipinto",
-                     "")
+                    ""),
+        (PF_INT, "starting_page",
+                 "Pagina iniziale di questa serie",
+                 0)
     ],  # argument
     [],  # Return value
     crea_pagine_da_folder  #Function name
