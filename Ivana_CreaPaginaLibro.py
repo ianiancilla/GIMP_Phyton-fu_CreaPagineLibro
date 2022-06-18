@@ -13,6 +13,8 @@ IMG_MAX_SIZE = 650
 IMG_CENTRE_X = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
 IMG_CENTRE_Y = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
 IMG_LAYER_NAME ="Immagine"
+SHADOW_LAYER_NAME ="Drop Shadow"
+
 
 # tape
 TAPE_LEFT_LAYER_NAME = "Tape_Left"
@@ -51,6 +53,8 @@ def crea_pagine_da_folder(image, drawable, image_folder_path, destination_folder
                 
                 # cancella immagine
                 image.remove_layer(pdb.gimp_image_get_layer_by_name(image, IMG_LAYER_NAME))
+                image.remove_layer(pdb.gimp_image_get_layer_by_name(image, SHADOW_LAYER_NAME))
+
                 #aumenta pagina
                 page_number+=1
         except Exception as error:
@@ -69,6 +73,9 @@ def crea_pagina_libro(image, drawable, image_path, destination_folder_path, auth
     
     ridimensiona_layer(image_layer, IMG_MAX_SIZE)
     centra_layer(image_layer)
+    # drop shadow
+    pdb.gimp_image_set_active_layer(image, pdb.gimp_image_get_layer_by_name(image, IMG_LAYER_NAME))
+    pdb.script_fu_drop_shadow(image, pdb.gimp_image_get_layer_by_name(image, IMG_LAYER_NAME), 0, 20, 20, "#000000", 30, 0)
 
     # sistema lo scotch
     layer_tape_left = pdb.gimp_image_get_layer_by_name(image, TAPE_LEFT_LAYER_NAME)
