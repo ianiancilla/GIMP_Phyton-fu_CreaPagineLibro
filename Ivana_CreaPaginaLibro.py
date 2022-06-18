@@ -42,13 +42,13 @@ def crea_pagine_da_folder(image, drawable, image_folder_path, destination_folder
                 # esporta come png
                 png_name = str(page_number) +".png"
                 destination_path = os.path.join(destination_folder_path, png_name)
-                #pdb.file_png_save_defaults(image, drawable, destination_path, destination_path)
 
+                # crea nuova immagine da mergeare per esportare tutti i livelli come PNG
                 new_image = pdb.gimp_image_duplicate(image)
                 layer = pdb.gimp_image_merge_visible_layers(new_image, CLIP_TO_IMAGE)
                 pdb.file_png_save_defaults(new_image, layer, destination_path, destination_path)
-                #pdb.gimp_file_save(new_image, layer, destination_path, '?')
                 pdb.gimp_image_delete(new_image)
+                
                 # cancella immagine
                 image.remove_layer(pdb.gimp_image_get_layer_by_name(image, IMG_LAYER_NAME))
                 #aumenta pagina
