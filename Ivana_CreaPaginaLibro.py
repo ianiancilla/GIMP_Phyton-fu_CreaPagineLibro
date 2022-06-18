@@ -3,15 +3,42 @@
 #from pickle import TRUE
 from gimpfu import *
 
+# page
 PAGE_WIDTH = 823
 PAGE_HEIGHT = 1024
 
-IMG_LAYER_NAME = "Immagine"
+# image
 IMG_MAX_SIZE = 650
 IMG_CENTRE_X = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
 IMG_CENTRE_Y = int((PAGE_WIDTH-IMG_MAX_SIZE)/2 + (IMG_MAX_SIZE/2))
 
-def crea_pagina_libro(image, drawable, image_path, author):
+# tape
+TAPE_LEFT_LAYER_NAME = "Tape_Left"
+TAPE_RIGHT_LAYER_NAME = "Tape_Right"
+TAPE_OVERLAP = 20
+
+# author
+AUTHOR_LAYER_NAME = "Autore"
+AUTHOR_TEXT_COLOR = "#2c1513"
+AUTHOR_VERTICAL_OFFSET = -50
+AUTHOR_TEXT_FONT = "IM FELL English Italic"
+
+# page
+PAGE_LAYER_NAME = "Pagina"
+PAGE_TEXT_COLOR = "#1e1312"
+PAGE_TEXT_FONT = "Serif Bold"
+
+
+def crea_pagine_da_folder(image, drawable, image_path, author):
+    # per ogni immagine nel folder
+    
+    # crea pagina
+    crea_pagina_libro(image, drawable, image_path, author, 100)
+    # esporta come png
+    # cancella immagine
+
+
+def crea_pagina_libro(image, drawable, image_path, author, page_number):
 
     # crea, scala e posiziona immagine
     image_layer = pdb.gimp_file_load_layer(image, image_path)
@@ -20,6 +47,41 @@ def crea_pagina_libro(image, drawable, image_path, author):
     ridimensiona_layer(image_layer, IMG_MAX_SIZE)
     centra_layer(image_layer)
 
+    # sistema lo scotch
+    layer_tape_left = pdb.gimp_image_get_layer_by_name(image, TAPE_LEFT_LAYER_NAME)
+    layer_tape_right = pdb.gimp_image_get_layer_by_name(image, TAPE_RIGHT_LAYER_NAME)
+    left_border_x = int(float(PAGE_WIDTH/2) - float(image_layer.width /2))
+    right_border_x = left_border_x + image_layer.width
+
+    pdb.gimp_layer_set_offsets(layer_tape_left,
+                               int(left_border_x - layer_tape_left.width + TAPE_OVERLAP),
+                               int(IMG_CENTRE_Y - layer_tape_left.height/2))
+    pdb.gimp_layer_set_offsets(layer_tape_right,
+                               int(right_border_x - TAPE_OVERLAP),
+                               int(IMG_CENTRE_Y - layer_tape_right.height/2))
+
+    # sistema testo autore
+    layer_author_text = pdb.gimp_image_get_layer_by_name(image, AUTHOR_LAYER_NAME)
+    pdb.gimp_text_layer_set_text(layer_author_text, author)
+    pdb.gimp_text_layer_set_color(layer_author_text, AUTHOR_TEXT_COLOR)
+    pdb.gimp_text_layer_set_font(layer_author_text, AUTHOR_TEXT_FONT)
+
+    img_bottom = int(IMG_CENTRE_Y + image_layer.height/2)
+    pdb.gimp_layer_set_offsets(layer_author_text,
+                               int(IMG_CENTRE_X - float(layer_author_text.width /2)),
+                               int(img_bottom + (PAGE_HEIGHT - img_bottom + AUTHOR_VERTICAL_OFFSET)/2 - layer_author_text.height/2 ))
+
+    # sistema numero pagina
+    layer_page_text = pdb.gimp_image_get_layer_by_name(image, PAGE_LAYER_NAME)
+    pdb.gimp_text_layer_set_text(layer_page_text, page_number)
+    pdb.gimp_text_layer_set_color(layer_page_text, PAGE_TEXT_COLOR)
+    pdb.gimp_text_layer_set_font(layer_page_text, PAGE_TEXT_FONT)
+
+
+    if (page_number%2 == 0):
+        pdb.gimp_text_layer_set_justification(layer_page_text, 0)   # justify left
+    else:
+        pdb.gimp_text_layer_set_justification(layer_page_text, 1)   # justify right
 
 
 def ridimensiona_layer(layer, max_size):
@@ -34,9 +96,10 @@ def ridimensiona_layer(layer, max_size):
                          int(layer.height * scalar),
                          FALSE)
 
+
 def centra_layer(layer):
-    pos_x = int(float(PAGE_WIDTH/2) - float(layer.width /2))
-    pos_y = int(float(PAGE_WIDTH/2) - float(layer.height /2))
+    pos_x = int(IMG_CENTRE_X - float(layer.width /2))
+    pos_y = int(IMG_CENTRE_X - float(layer.height /2))
 
     pdb.gimp_layer_set_offsets(layer,
                                pos_x,
@@ -64,7 +127,7 @@ register(
                      "")
     ],  # argument
     [],  # Return value
-    crea_pagina_libro  #Function name
+    crea_pagine_da_folder  #Function name
 )
 
 main()
